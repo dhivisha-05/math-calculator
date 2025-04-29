@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Probability and Statistics</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f4f8;
+      color: #333;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    section {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    input, button {
+      padding: 8px;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+    canvas {
+      max-width: 600px;
+      margin-top: 20px;
+    }
+    button {
+      background-color: #3b82f6;
+      color: white;
+      padding: 10px 20px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 5px;
+      margin-top: 1rem;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #2563eb;
+    }
+    .result {
+      margin-top: 20px;
+      background: #2c2c3e;
+      padding: 20px;
+      border-radius: 12px;
+      color: white;
+    }
+    .highlight {
+      color: #00eaff;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Probability and Statistics</h1>
+
+  <!-- Real Life Probability Simulator -->
+  <section>
+    <h2>🎲 Real-Life Probability Simulator</h2>
+    <label for="simCount">Number of Simulations:</label>
+    <input type="number" id="simCount" value="100">
+    <br>
+    <button onclick="runSimulation('coin')">🪙 Toss Coin</button>
+    <button onclick="runSimulation('dice')">🎲 Roll Dice</button>
+    <button onclick="runSimulation('traffic')">🚦 Traffic Light</button>
+    <button onclick="runSimulation('weather')">🌦️ Weather Forecast</button>
+    <canvas id="simChart"></canvas>
+  </section>
+
+  <!-- Bayes' Theorem Calculator -->
+  <section>
+    <h2>📐 Bayes' Theorem Calculator</h2>
+    <input type="number" id="pA" placeholder="P(A)" step="any" min="0" max="1" />
+    <input type="number" id="pBgivenA" placeholder="P(B|A)" step="any" min="0" max="1" />
+    <input type="number" id="pB" placeholder="P(B)" step="any" min="0" max="1" />
+    <br>
+    <button onclick="calculateBayes()">Calculate P(A|B)</button>
+    <div id="bayesResult" class="result" style="display:none;"></div>
+  </section>
+
+  <!-- Descriptive Stats Calculator -->
+  <section>
+    <h2>📊 Descriptive Stats Calculator</h2>
+    <input type="text" id="dataInput" placeholder="Enter numbers separated by commas" />
+    <br>
+    <button onclick="calculateStats()">Calculate</button>
+    <button onclick="resetStats()">Reset</button>
+    <div id="statsResult" class="result" style="display:none;">
+      <p>Mean: <span class="highlight" id="mean"></span></p>
+      <p>Median: <span class="highlight" id="median"></span></p>
+      <p>Mode: <span class="highlight" id="mode"></span></p>
+      <p>Min: <span class="highlight" id="min"></span> | Max: <span class="highlight" id="max"></span></p>
+    </div>
+  </section>
+
+  <!-- Binomial Distribution Calculator -->
+  <section>
+    <h2>📈 Binomial Distribution Calculator</h2>
+    <label>Number of trials (n):</label>
+    <input type="number" id="n" min="0" value="10"><br>
+    <label>Probability of success (p):</label>
+    <input type="number" id="p" step="0.01" min="0" max="1" value="0.5"><br>
+    <label>Number of successes (k):</label>
+    <input type="number" id="k" min="0" value="4"><br>
+    <button onclick="calculateBinomial()">Calculate</button>
+    <div id="binomialResult" class="result" style="display:none;"></div>
+  </section>
+
+  <script>
+    // ------------------ Simulation Section ------------------
+    let chart;
+    function runSimulation(type) {
+      const count = parseInt(document.getElementById('simCount').value);
+      let results = [], labels = [], data = [], colors = {};
+
+      switch (type) {
+        case 'coin':
+          results = simulate(count, ['Heads', 'Tails'], [0.5, 0.5]);
+          colors = { 'Heads': 'gold', 'Tails': 'gray' };
+          break;
+        case 'dice':
+          results = simulate(count, ['1','2','3','4','5','6']);
+          colors = { '1': '#e74c3c', '2': '#f1c40f', '3': '#2ecc71', '4': '#3498db', '5': '#9b59b6', '6': '#e67e22' };
+          break;
+        case 'traffic':
+          results = simulate(count, ['Green', 'Yellow', 'Red'], [0.5, 0.1, 0.4]);
+          colors = { 'Green': 'green', 'Yellow': 'yellow', 'Red': 'red' };
+          break;
+        case 'weather':
+          results = simulate(count, ['Sunny', 'Cloudy', 'Rainy', 'Stormy'], [0.5, 0.3, 0.15, 0.05]);
+          colors = { 'Sunny': '#f1c40f', 'Cloudy': '#bdc3c7', 'Rainy': '#3498db', 'Stormy': '#34495e' };
+          break;
+      }
+
+      const freq = {};
+      results.forEach(r => freq[r] = (freq[r] || 0) + 1);
+      labels = Object.keys(freq);
+      data = labels.map(k => freq[k]);
+
+      const ctx = document.getElementById('simChart').getContext('2d');
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{ label: 'Frequency', data: data, backgroundColor: labels.map(l => colors[l] || 'gray') }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            title: { display: true, text: type + ' Simulation' }
+          },
+          scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+      });
+    }
+
+    function simulate(count, outcomes, probs = null) {
+      const results = [];
+      for (let i = 0; i < count; i++) {
+        const r = Math.random();
+        if (probs) {
+          let acc = 0;
+          for (let j = 0; j < probs.length; j++) {
+            acc += probs[j];
+            if (r <= acc) {
+              results.push(outcomes[j]);
+              break;
+            }
+          }
+        } else {
+          results.push(outcomes[Math.floor(Math.random() * outcomes.length)]);
+        }
+      }
+      return results;
+    }
+
+    // ------------------ Bayes' Theorem ------------------
+    function calculateBayes() {
+      const pA = parseFloat(document.getElementById('pA').value);
+      const pBgivenA = parseFloat(document.getElementById('pBgivenA').value);
+      const pB = parseFloat(document.getElementById('pB').value);
+      const div = document.getElementById('bayesResult');
+      if (isNaN(pA) || isNaN(pBgivenA) || isNaN(pB) || pB === 0) {
+        div.textContent = "⚠️ Please enter valid probabilities (P(B) must be > 0).";
+        div.style.display = 'block';
+        return;
+      }
+      const result = (pBgivenA * pA) / pB;
+      div.innerHTML = `✅ <strong>P(A|B)</strong> = ${result.toFixed(4)}`;
+      div.style.display = 'block';
+    }
+
+    // ------------------ Descriptive Statistics ------------------
+    function calculateStats() {
+      const nums = document.getElementById('dataInput').value.split(',').map(n => parseFloat(n.trim())).filter(n => !isNaN(n));
+      if (nums.length === 0) return alert('Please enter valid numbers.');
+      const mean = nums.reduce((a, b) => a + b, 0) / nums.length;
+      const sorted = [...nums].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      const median = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+      const freq = {}, mode = [];
+      let maxFreq = 0;
+      nums.forEach(n => {
+        freq[n] = (freq[n] || 0) + 1;
+        if (freq[n] > maxFreq) maxFreq = freq[n];
+      });
+      for (let key in freq) {
+        if (freq[key] === maxFreq) mode.push(key);
+      }
+
+      document.getElementById('mean').textContent = mean.toFixed(2);
+      document.getElementById('median').textContent = median;
+      document.getElementById('mode').textContent = mode.join(', ');
+      document.getElementById('min').textContent = Math.min(...nums);
+      document.getElementById('max').textContent = Math.max(...nums);
+      document.getElementById('statsResult').style.display = 'block';
+    }
+
+    function resetStats() {
+      document.getElementById('dataInput').value = '';
+      document.getElementById('statsResult').style.display = 'none';
+    }
+
+    // ------------------ Binomial Distribution ------------------
+    function factorial(n) {
+      if (n <= 1) return 1;
+      return [...Array(n).keys()].map(i => i + 1).reduce((a, b) => a * b, 1);
+    }
+
+    function combination(n, k) {
+      return factorial(n) / (factorial(k) * factorial(n - k));
+    }
+
+    function binomialProbability(n, k, p) {
+      return combination(n, k) * Math.pow(p, k) * Math.pow(1 - p, n - k);
+    }
+
+    function calculateBinomial() {
+      const n = parseInt(document.getElementById('n').value);
+      const p = parseFloat(document.getElementById('p').value);
+      const k = parseInt(document.getElementById('k').value);
+      const div = document.getElementById('binomialResult');
+
+      if (isNaN(n) || isNaN(p) || isNaN(k) || n < 0 || k < 0 || k > n || p < 0 || p > 1) {
+        div.textContent = "⚠️ Please enter valid values.";
+        div.style.display = 'block';
+        return;
+      }
+
+      const prob = binomialProbability(n, k, p);
+      div.innerHTML = `🧮 <strong>P(X = ${k})</strong> = ${prob.toFixed(5)}`;
+      div.style.display = 'block';
+    }
+  </script>
+
+</body>
+</html>
